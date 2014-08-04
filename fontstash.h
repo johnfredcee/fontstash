@@ -20,6 +20,12 @@
 #ifndef FONTSTASH_H
 #define FONTSTASH_H
 
+#ifdef __APPLE__
+#include <OpenGL/gl3.h>
+#else
+#include <GL/gl3.h>
+#endif
+
 #define STH_ESUCCESS 0
 // error opening file
 #define STH_EFILEIO -1

@@ -22,12 +22,6 @@
 #include <string.h>
 #include <math.h> /* @rlyeh: floorf() */
 
-#ifdef __APPLE__
-#include <OpenGL/gl3.h>
-#else
-#include <GL/gl3.h>
-#endif
-
 /* @rlyeh: removed STB_TRUETYPE_IMPLENTATION. We link it externally */
 #include "stb_truetype.h"
 
@@ -594,7 +588,34 @@ static void flush_draw(struct sth_stash* stash)
 	while (texture)
 	{
 		if (texture->nverts > 0)
-		{			
+		{
+            // Load vertexes into OpenGL
+            GLuint buffer;
+            glGenVertexArrays(1, &buffer);  // One buffer for Vertex data and UV data.
+            glBindBuffer(GL_ARRAY_BUFFER, buffer);
+            glBufferData(GL_ARRAY_BUFFER, texture->nverts * 4 * sizeof(float), texture->verts, GL_STATIC_DRAW);
+            
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, texture->id);
+            
+            // 1st attribute buffer: vertices
+            glEnableVertexAttribArray(0);
+            glBindBuffer(GL_ARRAY_BUFFER, buffer);
+            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, VERT_STRIDE, (void*)0);
+            // 2nd attribute buffer: uv textures
+            glEnableVertexAttribArray(1);
+            glBindBuffer(GL_ARRAY_BUFFER, buffer);
+            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, VERT_STRIDE, (void*)VERT_STRIDE);
+            
+            // Draw
+            glDrawArrays(GL_QUADS, 0, texture->nverts);
+            
+            glDisableVertexAttribArray(0);
+            glDisableVertexAttribArray(1);
+            
+            // Delete data
+            glDeleteVertexArrays(1, &buffer);
+            /*
 			glBindTexture(GL_TEXTURE_2D, texture->id);
 			glEnable(GL_TEXTURE_2D);
 			glEnableClientState(GL_VERTEX_ARRAY);
@@ -606,6 +627,7 @@ static void flush_draw(struct sth_stash* stash)
 			glDisableClientState(GL_VERTEX_ARRAY);
 			glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 			texture->nverts = 0;
+            */
 		}
 		texture = texture->next;
 		if (!texture && tt)
