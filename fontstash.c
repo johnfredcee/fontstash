@@ -22,12 +22,10 @@
 #include <string.h>
 #include <math.h> /* @rlyeh: floorf() */
 
-#include <GL/glew.h>  /* @rlyeh: before including GL. doesnt hurt and makes life better */
-
-#ifdef __MACOSX__
-#include <OpenGL/gl.h>
+#ifdef __APPLE__
+#include <OpenGL/gl3.h>
 #else
-#include <GL/gl.h>
+#include <GL/gl3.h>
 #endif
 
 /* @rlyeh: removed STB_TRUETYPE_IMPLENTATION. We link it externally */
