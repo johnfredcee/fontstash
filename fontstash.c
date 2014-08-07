@@ -202,27 +202,45 @@ struct sth_stash* sth_create(int cachew, int cacheh)
     // Create the Shaders
     GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
     GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
-    //GLint Result = GL_FALSE;
+    GLint Result = GL_FALSE;
+    int infoLogLen;
     
     const char *vPtr = vertexShader;
     const char *fPtr = fragmentShader;
     
     glShaderSource(VertexShaderID, 1, &vPtr, NULL);
     glCompileShader(VertexShaderID);
-    //glGetShaderiv(VertexShaderID, GL_COMPILE_STATUS, &Result);
-    //printf("Vertex shader compilation result: %u\n", Result);
+    glGetShaderiv(VertexShaderID, GL_COMPILE_STATUS, &Result);
+    glGetShaderiv(VertexShaderID, GL_INFO_LOG_LENGTH, &infoLogLen);
+    if (infoLogLen > 0) {
+        char buf[1024];
+        glGetShaderInfoLog(VertexShaderID, infoLogLen, NULL, buf);
+        printf("Vertex shader compilation result (%u)\n%s\n", Result, buf);
+        printf("%s\n", vPtr);
+    }
     
     glShaderSource(FragmentShaderID, 1, &fPtr, NULL);
     glCompileShader(FragmentShaderID);
-    //glGetShaderiv(FragmentShaderID, GL_COMPILE_STATUS, &Result);
-    //printf("Fragment shader compilation result: %u\n", Result);
+    glGetShaderiv(FragmentShaderID, GL_COMPILE_STATUS, &Result);
+    glGetShaderiv(FragmentShaderID, GL_INFO_LOG_LENGTH, &infoLogLen);
+    if (infoLogLen > 0) {
+        char buf[1024];
+        glGetShaderInfoLog(FragmentShaderID, infoLogLen, NULL, buf);
+        printf("Fragment shader compilation result (%u)\n%s\n", Result, buf);
+        printf("%s\n", fPtr);
+    }
     
     stash->programID = glCreateProgram();
     glAttachShader(stash->programID, VertexShaderID);
     glAttachShader(stash->programID, FragmentShaderID);
     glLinkProgram(stash->programID);
-    //glGetProgramiv(stash->programID, GL_LINK_STATUS, &Result);
-    //printf("Program shader compilation result: %u\n", Result);
+    glGetShaderiv(stash->programID, GL_LINK_STATUS, &Result);
+    glGetShaderiv(stash->programID, GL_INFO_LOG_LENGTH, &infoLogLen);
+    if (infoLogLen > 0) {
+        char buf[1024];
+        glGetShaderInfoLog(stash->programID, infoLogLen, NULL, buf);
+        printf("Program link compilation result (%u)\n%s\n", Result, buf);
+    }
     
     glDeleteShader(VertexShaderID);
     glDeleteShader(FragmentShaderID);
@@ -715,12 +733,15 @@ static void flush_draw(struct sth_stash* stash)
                            (void*)0           // element array buffer offset
                            );
             
+            // Cleanup
+            glDisableVertexAttribArray(0);
+            glDisableVertexAttribArray(1);
+            
             // Delete data
             glDeleteVertexArrays(1, &buffer);
             glDeleteBuffers(1, &elementBuffer);
             
             free(elementIndices);
-            
 #else
             glEnable(GL_TEXTURE_2D);
             glBindTexture(GL_TEXTURE_2D, texture->id);
@@ -907,6 +928,10 @@ void sth_delete(struct sth_stash* stash)
 
 	if (!stash)
         return;
+    
+#ifdef STH_OPENGL3
+    glDeleteProgram(stash->programID);
+#endif
 
 	tex = stash->tt_textures;
 	while(tex != NULL) {
