@@ -114,6 +114,7 @@ struct sth_stash
 #ifdef STH_OPENGL3
     GLuint programID;
     GLuint matrixID;
+    GLuint textureID;
     GLfloat projectionMatrix[16];
 #endif
 };
@@ -225,6 +226,10 @@ struct sth_stash* sth_create(int cachew, int cacheh)
     
     glDeleteShader(VertexShaderID);
     glDeleteShader(FragmentShaderID);
+    
+    // Setup a few values
+    stash->matrixID  = glGetUniformLocation(stash->programID, "MVP");
+    stash->textureID = glGetUniformLocation(stash->programID, "myTextureSampler");
 #endif
     
 	// Create first texture for the cache.
@@ -674,6 +679,9 @@ static void flush_draw(struct sth_stash* stash)
                 elementIndices[idx++] = fOffset + 3;
                 fOffset += 4;
             }
+            
+            // Setup mvp matrix
+            glUniformMatrix4fv(stash->matrixID, 1, GL_FALSE, stash->projectionMatrix);
 
             // Load vertexes into OpenGL
             glGenVertexArrays(1, &buffer);  // One buffer for Vertex data and UV data.
@@ -689,6 +697,7 @@ static void flush_draw(struct sth_stash* stash)
             glActiveTexture(GL_TEXTURE0);
             glEnable(GL_TEXTURE_2D);
             glBindTexture(GL_TEXTURE_2D, texture->id);
+            glUniform1i(stash->textureID, 0);  // Set our "myTextureSampler" sampler to user Texture Unit 0
             
             // 1st attribute buffer: vertices
             glEnableVertexAttribArray(0);
