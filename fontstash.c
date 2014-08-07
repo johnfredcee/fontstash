@@ -27,8 +27,10 @@
 
 #include "fontstash.h"
 
-#include "fragmentShader.h"
-#include "vertexShader.h"
+#ifdef STH_OPENGL3
+#   include "fragmentShader.h"
+#   include "vertexShader.h"
+#endif
 
 #define HASH_LUT_SIZE 256
 #define MAX_ROWS 128
@@ -109,6 +111,11 @@ struct sth_stash
 	struct sth_texture* bm_textures;
 	struct sth_font* fonts;
 	int drawing;
+#ifdef STH_OPENGL3
+    GLuint programID;
+    GLuint matrixID;
+    GLfloat projectionMatrix[16];
+#endif
 };
 
 
@@ -168,6 +175,57 @@ struct sth_stash* sth_create(int cachew, int cacheh)
 	texture = (struct sth_texture*)malloc(sizeof(struct sth_texture));
 	if (texture == NULL) goto error;
 	memset(texture,0,sizeof(struct sth_texture));
+
+#ifdef STH_OPENGL3
+    // Setup the initial projection matrix
+    stash->projectionMatrix[ 0] = 1;
+    stash->projectionMatrix[ 1] = 0;
+    stash->projectionMatrix[ 2] = 0;
+    stash->projectionMatrix[ 3] = 0;
+
+    stash->projectionMatrix[ 4] = 0;
+    stash->projectionMatrix[ 5] = 1;
+    stash->projectionMatrix[ 6] = 0;
+    stash->projectionMatrix[ 7] = 0;
+
+    stash->projectionMatrix[ 8] = 0;
+    stash->projectionMatrix[ 9] = 0;
+    stash->projectionMatrix[10] = 1;
+    stash->projectionMatrix[11] = 0;
+
+    stash->projectionMatrix[12] = 0;
+    stash->projectionMatrix[13] = 0;
+    stash->projectionMatrix[14] = 0;
+    stash->projectionMatrix[15] = 1;
+    
+    // Create the Shaders
+    GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
+    GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
+    //GLint Result = GL_FALSE;
+    
+    const char *vPtr = vertexShader;
+    const char *fPtr = fragmentShader;
+    
+    glShaderSource(VertexShaderID, 1, &vPtr, NULL);
+    glCompileShader(VertexShaderID);
+    //glGetShaderiv(VertexShaderID, GL_COMPILE_STATUS, &Result);
+    //printf("Vertex shader compilation result: %u\n", Result);
+    
+    glShaderSource(FragmentShaderID, 1, &fPtr, NULL);
+    glCompileShader(FragmentShaderID);
+    //glGetShaderiv(FragmentShaderID, GL_COMPILE_STATUS, &Result);
+    //printf("Fragment shader compilation result: %u\n", Result);
+    
+    stash->programID = glCreateProgram();
+    glAttachShader(stash->programID, VertexShaderID);
+    glAttachShader(stash->programID, FragmentShaderID);
+    glLinkProgram(stash->programID);
+    //glGetProgramiv(stash->programID, GL_LINK_STATUS, &Result);
+    //printf("Program shader compilation result: %u\n", Result);
+    
+    glDeleteShader(VertexShaderID);
+    glDeleteShader(FragmentShaderID);
+#endif
     
 	// Create first texture for the cache.
 	stash->tw = cachew;
@@ -193,6 +251,10 @@ error:
 	if (texture != NULL)
 		free(texture);
 	return NULL;
+}
+
+void sth_projection_matrix(struct sth_stash* stash, const GLfloat* matrix) {
+    memcpy(stash->projectionMatrix, matrix, sizeof(GLfloat) * 16);
 }
 
 int sth_add_font_from_memory(struct sth_stash* stash, unsigned char* buffer)

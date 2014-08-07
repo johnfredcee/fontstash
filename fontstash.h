@@ -77,4 +77,9 @@ void sth_vmetrics(struct sth_stash* stash,
 
 void sth_delete(struct sth_stash* stash);
 
+#ifdef STH_OPENGL3
+    // OpenGL3 functions
+    void sth_projection_matrix(struct sth_stash* stash, const GLfloat* matrix);
+#endif
+
 #endif // FONTSTASH_H
