@@ -1,4 +1,5 @@
 //
+// Copyright (c) 2014 Sergio Moura sergio@moura.us
 // Copyright (c) 2011-2013 Andreas Krinke andreas.krinke@gmx.de
 // Copyright (c) 2009 Mikko Mononen memon@inside.org
 //
