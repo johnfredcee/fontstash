@@ -27,6 +27,9 @@
 
 #include "fontstash.h"
 
+#include "fragmentShader.h"
+#include "vertexShader.h"
+
 #define HASH_LUT_SIZE 256
 #define MAX_ROWS 128
 #define VERT_COUNT (6*128)
@@ -165,7 +168,7 @@ struct sth_stash* sth_create(int cachew, int cacheh)
 	texture = (struct sth_texture*)malloc(sizeof(struct sth_texture));
 	if (texture == NULL) goto error;
 	memset(texture,0,sizeof(struct sth_texture));
-
+    
 	// Create first texture for the cache.
 	stash->tw = cachew;
 	stash->th = cacheh;
@@ -589,13 +592,40 @@ static void flush_draw(struct sth_stash* stash)
 	{
 		if (texture->nverts > 0)
 		{
+#ifdef STH_OPENGL3
+            GLuint buffer, elementBuffer;
+            
+            GLuint *elementIndices;
+            unsigned int indiceCount, idx, fOffset;
+            
+            indiceCount = texture->nverts * 1.5;
+            elementIndices = malloc(sizeof(GLuint) * indiceCount);
+            
+            fOffset = 0;
+            for (idx = 0; idx < indiceCount;) {
+                elementIndices[idx++] = fOffset + 0;
+                elementIndices[idx++] = fOffset + 1;
+                elementIndices[idx++] = fOffset + 3;
+                
+                elementIndices[idx++] = fOffset + 1;
+                elementIndices[idx++] = fOffset + 2;
+                elementIndices[idx++] = fOffset + 3;
+                fOffset += 4;
+            }
+
             // Load vertexes into OpenGL
-            GLuint buffer;
             glGenVertexArrays(1, &buffer);  // One buffer for Vertex data and UV data.
             glBindBuffer(GL_ARRAY_BUFFER, buffer);
             glBufferData(GL_ARRAY_BUFFER, texture->nverts * 4 * sizeof(float), texture->verts, GL_STATIC_DRAW);
+
+            // Load element buffer into OpenGL
+            glGenBuffers(1, &elementBuffer);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * indiceCount, elementIndices, GL_STATIC_DRAW);
             
+            // Texture
             glActiveTexture(GL_TEXTURE0);
+            glEnable(GL_TEXTURE_2D);
             glBindTexture(GL_TEXTURE_2D, texture->id);
             
             // 1st attribute buffer: vertices
@@ -605,29 +635,34 @@ static void flush_draw(struct sth_stash* stash)
             // 2nd attribute buffer: uv textures
             glEnableVertexAttribArray(1);
             glBindBuffer(GL_ARRAY_BUFFER, buffer);
-            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, VERT_STRIDE, (void*)VERT_STRIDE);
+            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, VERT_STRIDE, (void*)(sizeof(float) * 2));
             
             // Draw
-            glDrawArrays(GL_QUADS, 0, texture->nverts);
-            
-            glDisableVertexAttribArray(0);
-            glDisableVertexAttribArray(1);
+            glDrawElements(GL_TRIANGLES,      // mode
+                           indiceCount,       // count
+                           GL_UNSIGNED_INT,   // type
+                           (void*)0           // element array buffer offset
+                           );
             
             // Delete data
             glDeleteVertexArrays(1, &buffer);
-            /*
-			glBindTexture(GL_TEXTURE_2D, texture->id);
-			glEnable(GL_TEXTURE_2D);
-			glEnableClientState(GL_VERTEX_ARRAY);
-			glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-			glVertexPointer(2, GL_FLOAT, VERT_STRIDE, texture->verts);
-			glTexCoordPointer(2, GL_FLOAT, VERT_STRIDE, texture->verts+2);
-			glDrawArrays(GL_QUADS, 0, texture->nverts);
-			glDisable(GL_TEXTURE_2D);
-			glDisableClientState(GL_VERTEX_ARRAY);
-			glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-			texture->nverts = 0;
-            */
+            glDeleteBuffers(1, &elementBuffer);
+            
+            free(elementIndices);
+            
+#else
+            glEnable(GL_TEXTURE_2D);
+            glBindTexture(GL_TEXTURE_2D, texture->id);
+            glEnableClientState(GL_VERTEX_ARRAY);
+            glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+            glVertexPointer(2, GL_FLOAT, VERT_STRIDE, texture->verts);
+            glTexCoordPointer(2, GL_FLOAT, VERT_STRIDE, texture->verts+2);
+            glDrawArrays(GL_QUADS, 0, texture->nverts);
+            glDisable(GL_TEXTURE_2D);
+            glDisableClientState(GL_VERTEX_ARRAY);
+            glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+#endif
+            texture->nverts = 0;
 		}
 		texture = texture->next;
 		if (!texture && tt)

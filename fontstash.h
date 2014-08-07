@@ -20,10 +20,21 @@
 #ifndef FONTSTASH_H
 #define FONTSTASH_H
 
-#ifdef __APPLE__
-#include <OpenGL/gl3.h>
-#else
-#include <GL/gl3.h>
+// Uses OpenGL3 functions and shaders (no immediate mode).
+#define STH_OPENGL3
+
+#ifdef STH_OPENGL3
+#   ifdef __APPLE__
+#       include <OpenGL/gl3.h>
+#   else
+#       include <GL/gl3.h>
+#   endif
+#else // NOT OpenGL3
+#   ifdef __APPLE__
+#       include <OpenGL/gl.h>
+#   else
+#       include <GL/gl.h>
+#   endif
 #endif
 
 #define STH_ESUCCESS 0
@@ -35,6 +46,7 @@
 #define STH_EINVAL -3
 // not enough memory
 #define STH_ENOMEM -4
+
 
 struct sth_stash* sth_create(int cachew, int cacheh);
 
