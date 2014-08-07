@@ -41,6 +41,12 @@
 #define TTFONT_MEM  2
 #define BMFONT      3
 
+#ifdef STH_OPENGL3
+#   define STH_GL_TEXTYPE   GL_RED
+#else
+#   define STH_GL_TEXTYPE   GL_ALPHA
+#endif
+
 static int idx = 1;
 
 static unsigned int hashint(unsigned int a)
@@ -260,7 +266,7 @@ struct sth_stash* sth_create(int cachew, int cacheh)
 	glGenTextures(1, &texture->id);
 	if (!texture->id) goto error;
 	glBindTexture(GL_TEXTURE_2D, texture->id);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, cachew, cacheh, 0, GL_ALPHA, GL_UNSIGNED_BYTE, empty_data);
+	glTexImage2D(GL_TEXTURE_2D, 0, STH_GL_TEXTYPE, cachew, cacheh, 0, STH_GL_TEXTYPE, GL_UNSIGNED_BYTE, empty_data);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -571,7 +577,7 @@ static struct sth_glyph* get_glyph(struct sth_stash* stash, struct sth_font* fnt
 						glGenTextures(1, &texture->id);
 						if (!texture->id) goto error;
 						glBindTexture(GL_TEXTURE_2D, texture->id);
-						glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, stash->tw,stash->th, 0, GL_ALPHA, GL_UNSIGNED_BYTE, stash->empty_data);
+						glTexImage2D(GL_TEXTURE_2D, 0, STH_GL_TEXTYPE, stash->tw, stash->th, 0, STH_GL_TEXTYPE, GL_UNSIGNED_BYTE, stash->empty_data);
 						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 					}
@@ -623,7 +629,7 @@ static struct sth_glyph* get_glyph(struct sth_stash* stash, struct sth_font* fnt
 		// Update texture
 		glBindTexture(GL_TEXTURE_2D, texture->id);
 		glPixelStorei(GL_UNPACK_ALIGNMENT,1);
-		glTexSubImage2D(GL_TEXTURE_2D, 0, glyph->x0,glyph->y0, gw,gh, GL_ALPHA,GL_UNSIGNED_BYTE,bmp);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, glyph->x0, glyph->y0, gw, gh, STH_GL_TEXTYPE, GL_UNSIGNED_BYTE, bmp);
 		free(bmp);
 	}
 	
@@ -678,13 +684,13 @@ static void flush_draw(struct sth_stash* stash)
 		if (texture->nverts > 0)
 		{
 #ifdef STH_OPENGL3
-            GLuint buffer, elementBuffer;
+            GLuint buffer[2];
             
-            GLuint *elementIndices;
+            GLushort *elementIndices;
             unsigned int indiceCount, idx, fOffset;
             
             indiceCount = texture->nverts * 1.5;
-            elementIndices = malloc(sizeof(GLuint) * indiceCount);
+            elementIndices = malloc(sizeof(GLushort) * indiceCount);
             
             fOffset = 0;
             for (idx = 0; idx < indiceCount;) {
@@ -697,39 +703,43 @@ static void flush_draw(struct sth_stash* stash)
                 elementIndices[idx++] = fOffset + 3;
                 fOffset += 4;
             }
+
+            // Start OpenGL Stuff.
+            glUseProgram(stash->programID);
             
             // Setup mvp matrix
             glUniformMatrix4fv(stash->matrixID, 1, GL_FALSE, stash->projectionMatrix);
 
+            glGenBuffers(2, buffer);  // buffer[0] for Vertex data and UV data / buffer[1] for indices
+            
             // Load vertexes into OpenGL
-            glGenVertexArrays(1, &buffer);  // One buffer for Vertex data and UV data.
-            glBindBuffer(GL_ARRAY_BUFFER, buffer);
+            glBindBuffer(GL_ARRAY_BUFFER, buffer[0]);
             glBufferData(GL_ARRAY_BUFFER, texture->nverts * 4 * sizeof(float), texture->verts, GL_STATIC_DRAW);
 
             // Load element buffer into OpenGL
-            glGenBuffers(1, &elementBuffer);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer[1]);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * indiceCount, elementIndices, GL_STATIC_DRAW);
             
             // Texture
             glActiveTexture(GL_TEXTURE0);
-            glEnable(GL_TEXTURE_2D);
             glBindTexture(GL_TEXTURE_2D, texture->id);
             glUniform1i(stash->textureID, 0);  // Set our "myTextureSampler" sampler to user Texture Unit 0
             
             // 1st attribute buffer: vertices
             glEnableVertexAttribArray(0);
-            glBindBuffer(GL_ARRAY_BUFFER, buffer);
+            glBindBuffer(GL_ARRAY_BUFFER, buffer[0]);
             glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, VERT_STRIDE, (void*)0);
+            
             // 2nd attribute buffer: uv textures
             glEnableVertexAttribArray(1);
-            glBindBuffer(GL_ARRAY_BUFFER, buffer);
+            glBindBuffer(GL_ARRAY_BUFFER, buffer[0]);
             glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, VERT_STRIDE, (void*)(sizeof(float) * 2));
             
             // Draw
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer[1]);   // just to be sure
             glDrawElements(GL_TRIANGLES,      // mode
                            indiceCount,       // count
-                           GL_UNSIGNED_INT,   // type
+                           GL_UNSIGNED_SHORT, // type
                            (void*)0           // element array buffer offset
                            );
             
@@ -738,8 +748,7 @@ static void flush_draw(struct sth_stash* stash)
             glDisableVertexAttribArray(1);
             
             // Delete data
-            glDeleteVertexArrays(1, &buffer);
-            glDeleteBuffers(1, &elementBuffer);
+            glDeleteBuffers(2, buffer);
             
             free(elementIndices);
 #else

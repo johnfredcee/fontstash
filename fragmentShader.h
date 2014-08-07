@@ -14,7 +14,7 @@ uniform sampler2D myTextureSampler;\n\
 \n\
 void main() {\n\
     // Output color = color of the texture at the specified UV\n\
-    color = texture(myTextureSampler, UV).rgb;\n\
+    color = texture(myTextureSampler, UV).rrr;\n\
 }";
 
 #endif /* __FONTSTASH_FRAGMENTSHADER_H */
