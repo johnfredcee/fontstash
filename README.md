@@ -11,15 +11,13 @@ Font Stash was originally created and [published](http://digestingduck.blogspot.
 * Added ability to load an arbitrary number of fonts (not just four)
 * Use multiple OpenGL textures for glyph caching (not just one)
 
-## Road map
-
-* Freetype2 support (for glyph outlines)
-
 ## Screenshot
 
 ![Screenshot](https://github.com/akrinke/Font-Stash/wiki/screenshot.png)
 
 ## Usage
+
+If you're using OpenGL 3 (no immediate mode), leave the STH_OPENGL3 macro defined on fontstash.h. If you're using immediate mode, comment the line and you're fine.
 
 ```c
 #include "fontstash.h"
@@ -48,9 +46,10 @@ Bitmap fonts can be generated using the [AngelCode Bitmap Font Generator](http:/
 
 ## License
 
-The files fontstash.c, fontstash.h and main.c are licensed unter the zlib license:
+The files fontstash.c, fontstash.h, fragmentShader.h and vertexShader.h are licensed under the zlib license:
 
-    Copyright (c) 2011 Andreas Krinke andreas.krinke@gmx.de
+    Copyright (c) 2014 Sergio Moura sergio@moura.us
+    Copyright (c) 2011-2013 Andreas Krinke andreas.krinke@gmx.de
     Copyright (c) 2009 Mikko Mononen memon@inside.org
 
     This software is provided 'as-is', without any express or implied
