@@ -48,6 +48,9 @@
 // not enough memory
 #define STH_ENOMEM -4
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct sth_stash* sth_create(int cachew, int cacheh);
 
@@ -81,6 +84,10 @@ void sth_delete(struct sth_stash* stash);
 #ifdef STH_OPENGL3
     // OpenGL3 functions
     void sth_projection_matrix(struct sth_stash* stash, const GLfloat* matrix);
+#endif
+    
+#ifdef __cplusplus
+}
 #endif
 
 #endif // FONTSTASH_H
