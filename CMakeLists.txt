@@ -4,9 +4,16 @@ cmake_policy(SET CMP0004 OLD)
 
 project (fontstash)
 
-set (SRCS fontstash.c fontstash.h stb_truetype.c)
+set (SRCS stb_truetype.c)
 set (BUILD_EXAMPLE CACHE OFF FORCE)
 set (WITH_OPENGL3 CACHE OFF FORCE)
+set (WITH_GLLOADGEN CACHE OFF FORCE)
+
+if (WITH_GLLOADGEN)
+    list (APPEND SRCS fontstash.hpp fontstash.cpp)
+else (WITH_GLLOADGEN)
+    list (APPEND SRCS fontstash.h fontstash.c)
+endif (WITH_GLLOADGEN)
 
 if (WITH_OPENGL3)
     add_definitions(-DSTH_OPENGL3)

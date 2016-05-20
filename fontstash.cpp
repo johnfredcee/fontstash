@@ -26,13 +26,7 @@
 /* @rlyeh: removed STB_TRUETYPE_IMPLENTATION. We link it externally */
 #include "stb_truetype.h"
 
-#include "fontstash.h"
-
-#ifdef __APPLE__
-    #include <OpenGL/gl.h>
-#else
-    #include <GL/gl.h>
-#endif
+#include "fontstash.hpp"
 
 // Shaders
 #ifdef STH_OPENGL3
@@ -91,9 +85,9 @@
 #define BMFONT      3
 
 #ifdef STH_OPENGL3
-#   define STH_GL_TEXTYPE   GL_RED
+#   define STH_GL_TEXTYPE   gl::RED
 #else
-#   define STH_GL_TEXTYPE   GL_ALPHA
+#   define STH_GL_TEXTYPE   gl::ALPHA
 #endif
 
 static int idx = 1;
@@ -265,60 +259,60 @@ struct sth_stash* sth_create(int cachew, int cacheh)
     stash->color[3] = 1.0f;
 
     // Create the Shaders
-    GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
-    GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
-    GLint Result = GL_FALSE;
+    GLuint VertexShaderID = gl::CreateShader(gl::VERTEX_SHADER);
+    GLuint FragmentShaderID = gl::CreateShader(gl::FRAGMENT_SHADER);
+    GLint Result = gl::FALSE_;
     int infoLogLen;
 
     const char *vPtr = vertexShader;
     const char *fPtr = fragmentShader;
 
-    glShaderSource(VertexShaderID, 1, &vPtr, NULL);
-    glCompileShader(VertexShaderID);
-    glGetShaderiv(VertexShaderID, GL_COMPILE_STATUS, &Result);
-    glGetShaderiv(VertexShaderID, GL_INFO_LOG_LENGTH, &infoLogLen);
+    gl::ShaderSource(VertexShaderID, 1, &vPtr, NULL);
+    gl::CompileShader(VertexShaderID);
+    gl::GetShaderiv(VertexShaderID, gl::COMPILE_STATUS, &Result);
+    gl::GetShaderiv(VertexShaderID, gl::INFO_LOG_LENGTH, &infoLogLen);
     if (infoLogLen > 0) {
         char buf[1024];
-        glGetShaderInfoLog(VertexShaderID, infoLogLen, NULL, buf);
+        gl::GetShaderInfoLog(VertexShaderID, infoLogLen, NULL, buf);
         printf("Vertex shader compilation result (%u)\n%s\n", Result, buf);
         printf("%s\n", vPtr);
     }
 
-    glShaderSource(FragmentShaderID, 1, &fPtr, NULL);
-    glCompileShader(FragmentShaderID);
-    glGetShaderiv(FragmentShaderID, GL_COMPILE_STATUS, &Result);
-    glGetShaderiv(FragmentShaderID, GL_INFO_LOG_LENGTH, &infoLogLen);
+    gl::ShaderSource(FragmentShaderID, 1, &fPtr, NULL);
+    gl::CompileShader(FragmentShaderID);
+    gl::GetShaderiv(FragmentShaderID, gl::COMPILE_STATUS, &Result);
+    gl::GetShaderiv(FragmentShaderID, gl::INFO_LOG_LENGTH, &infoLogLen);
     if (infoLogLen > 0) {
         char buf[1024];
-        glGetShaderInfoLog(FragmentShaderID, infoLogLen, NULL, buf);
+        gl::GetShaderInfoLog(FragmentShaderID, infoLogLen, NULL, buf);
         printf("Fragment shader compilation result (%u)\n%s\n", Result, buf);
         printf("%s\n", fPtr);
     }
 
-    stash->programID = glCreateProgram();
-    glAttachShader(stash->programID, VertexShaderID);
-    glAttachShader(stash->programID, FragmentShaderID);
-    glLinkProgram(stash->programID);
-    glGetShaderiv(stash->programID, GL_LINK_STATUS, &Result);
-    glGetShaderiv(stash->programID, GL_INFO_LOG_LENGTH, &infoLogLen);
+    stash->programID = gl::CreateProgram();
+    gl::AttachShader(stash->programID, VertexShaderID);
+    gl::AttachShader(stash->programID, FragmentShaderID);
+    gl::LinkProgram(stash->programID);
+    gl::GetShaderiv(stash->programID, gl::LINK_STATUS, &Result);
+    gl::GetShaderiv(stash->programID, gl::INFO_LOG_LENGTH, &infoLogLen);
     if (infoLogLen > 0) {
         char buf[1024];
-        glGetShaderInfoLog(stash->programID, infoLogLen, NULL, buf);
+        gl::GetShaderInfoLog(stash->programID, infoLogLen, NULL, buf);
         printf("Program link compilation result (%u)\n%s\n", Result, buf);
     }
 
-    glDeleteShader(VertexShaderID);
-    glDeleteShader(FragmentShaderID);
+    gl::DeleteShader(VertexShaderID);
+    gl::DeleteShader(FragmentShaderID);
 
     // Setup a few values
-    stash->matrixID  = glGetUniformLocation(stash->programID, "MVP");
-    stash->textureID = glGetUniformLocation(stash->programID, "myTextureSampler");
-    stash->colorID = glGetUniformLocation(stash->programID, "color");
+    stash->matrixID  = gl::GetUniformLocation(stash->programID, "MVP");
+    stash->textureID = gl::GetUniformLocation(stash->programID, "myTextureSampler");
+    stash->colorID = gl::GetUniformLocation(stash->programID, "color");
 
     // OpenGL buffers
-    glGenVertexArrays(1, &stash->vao);
-    glGenBuffers(1, &stash->vbo);
-    glGenBuffers(1, &stash->ebo);
+    gl::GenVertexArrays(1, &stash->vao);
+    gl::GenBuffers(1, &stash->vbo);
+    gl::GenBuffers(1, &stash->ebo);
 #endif
 
 	// Create first texture for the cache.
@@ -328,12 +322,12 @@ struct sth_stash* sth_create(int cachew, int cacheh)
 	stash->ith = 1.0f/cacheh;
 	stash->empty_data = empty_data;
 	stash->tt_textures = texture;
-	glGenTextures(1, &texture->id);
+	gl::GenTextures(1, &texture->id);
 	if (!texture->id) goto error;
-	glBindTexture(GL_TEXTURE_2D, texture->id);
-	glTexImage2D(GL_TEXTURE_2D, 0, STH_GL_TEXTYPE, cachew, cacheh, 0, STH_GL_TEXTYPE, GL_UNSIGNED_BYTE, empty_data);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	gl::BindTexture(gl::TEXTURE_2D, texture->id);
+	gl::TexImage2D(gl::TEXTURE_2D, 0, STH_GL_TEXTYPE, cachew, cacheh, 0, STH_GL_TEXTYPE, gl::UNSIGNED_BYTE, empty_data);
+	gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR);
+	gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR);
 
 	return stash;
 
@@ -648,12 +642,12 @@ static struct sth_glyph* get_glyph(struct sth_stash* stash, struct sth_font* fnt
 						texture = texture->next;
 						if (texture == NULL) goto error;
 						memset(texture,0,sizeof(struct sth_texture));
-						glGenTextures(1, &texture->id);
+                        gl::GenTextures(1, &texture->id);
 						if (!texture->id) goto error;
-						glBindTexture(GL_TEXTURE_2D, texture->id);
-						glTexImage2D(GL_TEXTURE_2D, 0, STH_GL_TEXTYPE, stash->tw, stash->th, 0, STH_GL_TEXTYPE, GL_UNSIGNED_BYTE, stash->empty_data);
-						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+						gl::BindTexture(gl::TEXTURE_2D, texture->id);
+						gl::TexImage2D(gl::TEXTURE_2D, 0, STH_GL_TEXTYPE, stash->tw, stash->th, 0, STH_GL_TEXTYPE, gl::UNSIGNED_BYTE, stash->empty_data);
+						gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR);
+						gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR);
 					}
 					continue;
 				}
@@ -701,9 +695,9 @@ static struct sth_glyph* get_glyph(struct sth_stash* stash, struct sth_font* fnt
 	{
 		stbtt_MakeGlyphBitmap(&fnt->font, bmp, gw,gh,gw, scale,scale, g);
 		// Update texture
-		glBindTexture(GL_TEXTURE_2D, texture->id);
-		glPixelStorei(GL_UNPACK_ALIGNMENT,1);
-		glTexSubImage2D(GL_TEXTURE_2D, 0, glyph->x0, glyph->y0, gw, gh, STH_GL_TEXTYPE, GL_UNSIGNED_BYTE, bmp);
+		gl::BindTexture(gl::TEXTURE_2D, texture->id);
+		gl::PixelStorei(gl::UNPACK_ALIGNMENT,1);
+		gl::TexSubImage2D(gl::TEXTURE_2D, 0, glyph->x0, glyph->y0, gw, gh, STH_GL_TEXTYPE, gl::UNSIGNED_BYTE, bmp);
 		free(bmp);
 	}
 
@@ -779,61 +773,61 @@ static void flush_draw(struct sth_stash* stash)
             }
 
             // VAO
-            glBindVertexArray(stash->vao);
+            gl::BindVertexArray(stash->vao);
                 // Load vertexes into OpenGL
-                glBindBuffer(GL_ARRAY_BUFFER, stash->vbo);
-                glBufferData(GL_ARRAY_BUFFER, texture->nverts * 4 * sizeof(float), texture->verts, GL_STATIC_DRAW);
+                gl::BindBuffer(gl::ARRAY_BUFFER, stash->vbo);
+                gl::BufferData(gl::ARRAY_BUFFER, texture->nverts * 4 * sizeof(float), texture->verts, gl::STATIC_DRAW);
 
                 // Load element buffer into OpenGL
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, stash->ebo);
-                glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * indiceCount, elementIndices, GL_STATIC_DRAW);
+                gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, stash->ebo);
+                gl::BufferData(gl::ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * indiceCount, elementIndices, gl::STATIC_DRAW);
 
                 // Attributes
                 // 1st attribute buffer: vertices
-                glEnableVertexAttribArray(0);
-                glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, VERT_STRIDE, (void*)0);
+                gl::EnableVertexAttribArray(0);
+                gl::VertexAttribPointer(0, 2, gl::FLOAT, gl::FALSE_, VERT_STRIDE, (void*)0);
 
                 // 2nd attribute buffer: uv textures
-                glEnableVertexAttribArray(1);
-                glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, VERT_STRIDE, (void*)(sizeof(float) * 2));
-            glBindVertexArray(0);
+                gl::EnableVertexAttribArray(1);
+                gl::VertexAttribPointer(1, 2, gl::FLOAT, gl::FALSE_, VERT_STRIDE, (void*)(sizeof(float) * 2));
+            gl::BindVertexArray(0);
 
             // Start OpenGL Stuff.
-            glUseProgram(stash->programID);
+            gl::UseProgram(stash->programID);
 
             // Setup mvp matrix
-            glUniformMatrix4fv(stash->matrixID, 1, GL_FALSE, stash->projectionMatrix);
+            gl::UniformMatrix4fv(stash->matrixID, 1, gl::FALSE_, stash->projectionMatrix);
 
             // Setup color
-            glUniform4fv(stash->colorID, 1, stash->color);
+            gl::Uniform4fv(stash->colorID, 1, stash->color);
 
             // Texture
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, texture->id);
-            glUniform1i(stash->textureID, 0);  // Set our "myTextureSampler" sampler to user Texture Unit 0
+            gl::ActiveTexture(gl::TEXTURE0);
+            gl::BindTexture(gl::TEXTURE_2D, texture->id);
+            gl::Uniform1i(stash->textureID, 0);  // Set our "myTextureSampler" sampler to user Texture Unit 0
 
             // Draw
-            glBindVertexArray(stash->vao);
-                glDrawElements(GL_TRIANGLES,      // mode
+            gl::BindVertexArray(stash->vao);
+                gl::DrawElements(gl::TRIANGLES,      // mode
                                indiceCount,       // count
-                               GL_UNSIGNED_SHORT, // type
+                               gl::UNSIGNED_SHORT, // type
                                (void*)0           // element array buffer offset
                                );
-            glBindVertexArray(0);
+            gl::BindVertexArray(0);
 
             // Delete data
             free(elementIndices);
 #else
-            glEnable(GL_TEXTURE_2D);
-            glBindTexture(GL_TEXTURE_2D, texture->id);
-            glEnableClientState(GL_VERTEX_ARRAY);
-            glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-            glVertexPointer(2, GL_FLOAT, VERT_STRIDE, texture->verts);
-            glTexCoordPointer(2, GL_FLOAT, VERT_STRIDE, texture->verts+2);
-            glDrawArrays(GL_QUADS, 0, texture->nverts);
-            glDisable(GL_TEXTURE_2D);
-            glDisableClientState(GL_VERTEX_ARRAY);
-            glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+            gl::Enable(gl::TEXTURE_2D);
+            gl::BindTexture(gl::TEXTURE_2D, texture->id);
+            gl::EnableClientState(gl::VERTEX_ARRAY);
+            gl::EnableClientState(gl::TEXTURE_COORD_ARRAY);
+            gl::VertexPointer(2, gl::FLOAT, VERT_STRIDE, texture->verts);
+            gl::TexCoordPointer(2, gl::FLOAT, VERT_STRIDE, texture->verts+2);
+            gl::DrawArrays(gl::QUADS, 0, texture->nverts);
+            gl::Disable(gl::TEXTURE_2D);
+            gl::DisableClientState(gl::VERTEX_ARRAY);
+            gl::DisableClientState(gl::TEXTURE_COORD_ARRAY);
 #endif
             texture->nverts = 0;
 		}
@@ -1011,10 +1005,10 @@ void sth_delete(struct sth_stash* stash)
         return;
 
 #ifdef STH_OPENGL3
-    glDeleteProgram(stash->programID);
-    glDeleteVertexArrays(1, &stash->vao);
-    glDeleteBuffers(1, &stash->vbo);
-    glDeleteBuffers(1, &stash->ebo);
+    gl::DeleteProgram(stash->programID);
+    gl::DeleteVertexArrays(1, &stash->vao);
+    gl::DeleteBuffers(1, &stash->vbo);
+    gl::DeleteBuffers(1, &stash->ebo);
 #endif
 
 	tex = stash->tt_textures;
@@ -1022,7 +1016,7 @@ void sth_delete(struct sth_stash* stash)
 		curtex = tex;
 		tex = tex->next;
 		if (curtex->id)
-			glDeleteTextures(1, &curtex->id);
+			gl::DeleteTextures(1, &curtex->id);
 		free(curtex);
 	}
 
@@ -1031,7 +1025,7 @@ void sth_delete(struct sth_stash* stash)
 		curtex = tex;
 		tex = tex->next;
 		if (curtex->id)
-			glDeleteTextures(1, &curtex->id);
+			gl::DeleteTextures(1, &curtex->id);
 		free(curtex);
 	}
 
