@@ -21,21 +21,10 @@
 #ifndef FONTSTASH_H
 #define FONTSTASH_H
 
-// Uses OpenGL3 functions and shaders (no immediate mode).
-#define STH_OPENGL3
-
-#ifdef STH_OPENGL3
-#   ifdef __APPLE__
-#       include <OpenGL/gl3.h>
-#   else
-#       include <GL/gl3.h>
-#   endif
-#else // NOT OpenGL3
-#   ifdef __APPLE__
-#       include <OpenGL/gl.h>
-#   else
-#       include <GL/gl.h>
-#   endif
+#ifdef __APPLE__
+    #include <OpenGL/gl.h>
+#else
+    #include <GL/gl.h>
 #endif
 
 #define STH_ESUCCESS 0
@@ -81,11 +70,13 @@ void sth_vmetrics(struct sth_stash* stash,
 
 void sth_delete(struct sth_stash* stash);
 
+// OpenGL3 functions
 #ifdef STH_OPENGL3
-    // OpenGL3 functions
-    void sth_projection_matrix(struct sth_stash* stash, const GLfloat* matrix);
+void sth_projection_matrix(struct sth_stash* stash, const GLfloat* matrix);
+
+void sth_color(struct sth_stash* stash, GLfloat r, GLfloat g, GLfloat b, GLfloat a);
 #endif
-    
+
 #ifdef __cplusplus
 }
 #endif
