@@ -217,17 +217,17 @@ struct sth_stash* sth_create(int cachew, int cacheh)
 
 	// Allocate memory for the font stash.
 	stash = (struct sth_stash*)malloc(sizeof(struct sth_stash));
-	if (stash == NULL) goto error;
+	if (stash == NULL) return NULL;
 	memset(stash,0,sizeof(struct sth_stash));
 
 	// Create data for clearing the textures
 	empty_data = (GLubyte*) malloc(cachew * cacheh);
-	if (empty_data == NULL) goto error;
+	if (empty_data == NULL) return NULL;
 	memset(empty_data, 0, cachew * cacheh);
 
 	// Allocate memory for the first texture
 	texture = (struct sth_texture*)malloc(sizeof(struct sth_texture));
-	if (texture == NULL) goto error;
+	if (texture == NULL) return NULL;
 	memset(texture,0,sizeof(struct sth_texture));
 
 #ifdef STH_OPENGL3
@@ -261,14 +261,17 @@ struct sth_stash* sth_create(int cachew, int cacheh)
     // Create the Shaders
     GLuint VertexShaderID = gl::CreateShader(gl::VERTEX_SHADER);
     GLuint FragmentShaderID = gl::CreateShader(gl::FRAGMENT_SHADER);
+#ifdef STH_CHECK_ERROS
     GLint Result = gl::FALSE_;
     int infoLogLen;
+#endif
 
     const char *vPtr = vertexShader;
     const char *fPtr = fragmentShader;
 
     gl::ShaderSource(VertexShaderID, 1, &vPtr, NULL);
     gl::CompileShader(VertexShaderID);
+#ifdef STH_CHECK_ERROS
     gl::GetShaderiv(VertexShaderID, gl::COMPILE_STATUS, &Result);
     gl::GetShaderiv(VertexShaderID, gl::INFO_LOG_LENGTH, &infoLogLen);
     if (infoLogLen > 0) {
@@ -277,9 +280,11 @@ struct sth_stash* sth_create(int cachew, int cacheh)
         printf("Vertex shader compilation result (%u)\n%s\n", Result, buf);
         printf("%s\n", vPtr);
     }
+#endif
 
     gl::ShaderSource(FragmentShaderID, 1, &fPtr, NULL);
     gl::CompileShader(FragmentShaderID);
+#ifdef STH_CHECK_ERROS
     gl::GetShaderiv(FragmentShaderID, gl::COMPILE_STATUS, &Result);
     gl::GetShaderiv(FragmentShaderID, gl::INFO_LOG_LENGTH, &infoLogLen);
     if (infoLogLen > 0) {
@@ -288,11 +293,13 @@ struct sth_stash* sth_create(int cachew, int cacheh)
         printf("Fragment shader compilation result (%u)\n%s\n", Result, buf);
         printf("%s\n", fPtr);
     }
+#endif
 
     stash->programID = gl::CreateProgram();
     gl::AttachShader(stash->programID, VertexShaderID);
     gl::AttachShader(stash->programID, FragmentShaderID);
     gl::LinkProgram(stash->programID);
+#ifdef STH_CHECK_ERROS
     gl::GetShaderiv(stash->programID, gl::LINK_STATUS, &Result);
     gl::GetShaderiv(stash->programID, gl::INFO_LOG_LENGTH, &infoLogLen);
     if (infoLogLen > 0) {
@@ -300,6 +307,7 @@ struct sth_stash* sth_create(int cachew, int cacheh)
         gl::GetShaderInfoLog(stash->programID, infoLogLen, NULL, buf);
         printf("Program link compilation result (%u)\n%s\n", Result, buf);
     }
+#endif
 
     gl::DeleteShader(VertexShaderID);
     gl::DeleteShader(FragmentShaderID);
@@ -752,8 +760,6 @@ static void flush_draw(struct sth_stash* stash)
 		if (texture->nverts > 0)
 		{
 #ifdef STH_OPENGL3
-            GLuint buffer[2];
-
             GLushort *elementIndices;
             unsigned int indiceCount, idx, fOffset;
 

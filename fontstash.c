@@ -758,8 +758,6 @@ static void flush_draw(struct sth_stash* stash)
 		if (texture->nverts > 0)
 		{
 #ifdef STH_OPENGL3
-            GLuint buffer[2];
-
             GLushort *elementIndices;
             unsigned int indiceCount, idx, fOffset;
 
