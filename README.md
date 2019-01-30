@@ -4,6 +4,11 @@ Font Stash enables easy string rendering in OpenGL applications. It supports tru
 
 Font Stash was originally created and [published](http://digestingduck.blogspot.com/2009/08/font-stash.html) by [Mikko Mononen](http://digestingduck.blogspot.com).
 
+## This version (Yarston):
+* don't use glm
+* doesn't support OpenGL < 3.3
+* remove some excess memory allocation
+
 ## Major changes to the original version
 
 * Bitmap font support
@@ -13,7 +18,7 @@ Font Stash was originally created and [published](http://digestingduck.blogspot.
 
 ## Screenshot
 
-![Screenshot](https://github.com/akrinke/Font-Stash/wiki/screenshot.png)
+![Screenshot](https://github.com/yarston/fontstash/blob/master/screenshot.png)
 
 ## Usage
 
