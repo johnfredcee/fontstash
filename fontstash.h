@@ -21,6 +21,8 @@
 #ifndef FONTSTASH_H
 #define FONTSTASH_H
 
+#define STH_OPENGL3
+
 #ifdef __APPLE__
     #include <OpenGL/gl.h>
 #else
@@ -42,38 +44,27 @@ extern "C" {
 #endif
 
 struct sth_stash* sth_create(int cachew, int cacheh);
-
+void sth_set_screen_size(struct sth_stash* stash, float width, float height);
 int sth_add_font(struct sth_stash* stash, const char* path);
 int sth_add_font_from_memory(struct sth_stash* stash, unsigned char* buffer);
 
 int sth_add_bitmap_font(struct sth_stash* stash, int ascent, int descent, int line_gap);
-int sth_add_glyph_for_codepoint(struct sth_stash* stash, int idx, GLuint id, unsigned int codepoint,
-                                short size, short base, int x, int y, int w, int h,
-                                float xoffset, float yoffset, float xadvance);
-int sth_add_glyph_for_char(struct sth_stash* stash, int idx, GLuint id, const char* s,
-                           short size, short base, int x, int y, int w, int h,
-                           float xoffset, float yoffset, float xadvance);
+int sth_add_glyph_for_codepoint(struct sth_stash* stash, int idx, GLuint id, unsigned int codepoint, short int size, short int base, int x, int y, int w, int h, float xoffset, float yoffset, float xadvance);
+int sth_add_glyph_for_char(struct sth_stash* stash, int idx, GLuint id, const char* s, short size, short base, int x, int y, int w, int h, float xoffset, float yoffset, float xadvance);
 
 void sth_begin_draw(struct sth_stash* stash);
 void sth_end_draw(struct sth_stash* stash);
 
-void sth_draw_text(struct sth_stash* stash,
-				   int idx, float size,
-				   float x, float y, const char* string, float* dx);
+void sth_draw_text(struct sth_stash* stash, int idx, float size, float x, float y, const char* string, float* dx);
 
-void sth_dim_text(struct sth_stash* stash, int idx, float size, const char* string,
-				  float* minx, float* miny, float* maxx, float* maxy);
+void sth_dim_text(struct sth_stash* stash, int idx, float size, const char* string, float* minx, float* miny, float* maxx, float* maxy);
 
-void sth_vmetrics(struct sth_stash* stash,
-				  int idx, float size,
-				  float* ascender, float* descender, float * lineh);
+void sth_vmetrics(struct sth_stash* stash, int idx, float size, float* ascender, float* descender, float * lineh);
 
 void sth_delete(struct sth_stash* stash);
 
 // OpenGL3 functions
 #ifdef STH_OPENGL3
-void sth_projection_matrix(struct sth_stash* stash, const GLfloat* matrix);
-
 void sth_color(struct sth_stash* stash, GLfloat r, GLfloat g, GLfloat b, GLfloat a);
 #endif
 
