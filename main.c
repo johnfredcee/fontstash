@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    struct sth_stash* stash = sth_create(512, 512);
+    sth_stash* stash = sth_create(512, 512);
 	if(!stash) fprintf(stderr, "Could not create stash.\n");
     int droidRegular, droidItalic, droidBold, droidJapanese, dejavu;
 	loadFonts(stash, &droidRegular, &droidItalic, &droidBold, &droidJapanese, &dejavu);
@@ -139,6 +139,6 @@ int main(int argc, char **argv) {
         glfwPollEvents();
     } while(glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0);
     glfwTerminate();
-
+    sth_delete(stash);
     return 0;
 }

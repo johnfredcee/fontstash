@@ -42,31 +42,101 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+    
+/* @rlyeh: removed STB_TRUETYPE_IMPLENTATION. We link it externally */
+#include "stb_truetype.h"
 
-struct sth_stash* sth_create(int cachew, int cacheh);
-void sth_set_screen_size(struct sth_stash* stash, float width, float height);
-int sth_add_font(struct sth_stash* stash, const char* path);
-int sth_add_font_from_memory(struct sth_stash* stash, unsigned char* buffer);
+#define HASH_LUT_SIZE 256
+#define MAX_ROWS 128
+#define VERT_COUNT (6*128)
+#define VERT_STRIDE (sizeof(float)*4)
 
-int sth_add_bitmap_font(struct sth_stash* stash, int ascent, int descent, int line_gap);
-int sth_add_glyph_for_codepoint(struct sth_stash* stash, int idx, GLuint id, unsigned int codepoint, short int size, short int base, int x, int y, int w, int h, float xoffset, float yoffset, float xadvance);
-int sth_add_glyph_for_char(struct sth_stash* stash, int idx, GLuint id, const char* s, short size, short base, int x, int y, int w, int h, float xoffset, float yoffset, float xadvance);
+#define TTFONT_FILE 1
+#define TTFONT_MEM  2
+#define BMFONT      3
 
-void sth_begin_draw(struct sth_stash* stash);
-void sth_end_draw(struct sth_stash* stash);
+#define STH_GL_TEXTYPE   GL_RED
 
-void sth_draw_text(struct sth_stash* stash, int idx, float size, float x, float y, const char* string, float* dx);
+typedef struct sth_quad {
+	float x0,y0,s0,t0;
+	float x1,y1,s1,t1;
+} sth_quad;
 
-void sth_dim_text(struct sth_stash* stash, int idx, float size, const char* string, float* minx, float* miny, float* maxx, float* maxy);
+typedef struct sth_row {
+	short x,y,h;
+} sth_row;
 
-void sth_vmetrics(struct sth_stash* stash, int idx, float size, float* ascender, float* descender, float * lineh);
+typedef struct sth_glyph {
+	unsigned int codepoint;
+	short size;
+	struct sth_texture* texture;
+	int x0,y0,x1,y1;
+	float xadv,xoff,yoff;
+	int next;
+} sth_glyph;
 
-void sth_delete(struct sth_stash* stash);
+typedef struct sth_font {
+	int idx;
+	int type;
+	stbtt_fontinfo font;
+	unsigned char* data;
+    sth_glyph* glyphs;
+	int lut[HASH_LUT_SIZE];
+	int nglyphs;
+	float ascender;
+	float descender;
+	float lineh;
+	struct sth_font* next;
+} sth_font;
 
-// OpenGL3 functions
-#ifdef STH_OPENGL3
-void sth_color(struct sth_stash* stash, GLfloat r, GLfloat g, GLfloat b, GLfloat a);
-#endif
+struct sth_texture {
+	GLuint id;
+	// TODO: replace rows with pointer
+    sth_row rows[MAX_ROWS];
+	int nrows;
+	float verts[4 * VERT_COUNT];
+	int nverts;
+	struct sth_texture* next;
+};
+
+typedef struct sth_stash {
+	int tw;
+    int th;
+	float itw;
+    float ith;
+    float screen2gl_x;
+    float screen2gl_y;
+	struct sth_texture* tt_textures;
+	struct sth_texture* bm_textures;
+    sth_font* fonts;
+	int drawing;
+    GLuint programID;
+    GLuint textureID;
+    GLuint vao;
+    GLuint vbo, ebo;
+    GLfloat color[4];
+    GLuint colorID;
+    GLushort *elementIndices;
+    unsigned indiceCount;
+} sth_stash;
+
+sth_stash* sth_create(int cachew, int cacheh);
+void sth_set_screen_size(sth_stash* stash, float width, float height);
+int sth_add_font(sth_stash* stash, const char* path);
+int sth_add_font_from_memory(sth_stash* stash, unsigned char* buffer);
+
+int sth_add_bitmap_font(sth_stash* stash, int ascent, int descent, int line_gap);
+int sth_add_glyph_for_codepoint(sth_stash* stash, int idx, GLuint id, unsigned int codepoint, short int size, short int base, int x, int y, int w, int h, float xoffset, float yoffset, float xadvance);
+int sth_add_glyph_for_char(sth_stash* stash, int idx, GLuint id, const char* s, short int size, short int base, int x, int y, int w, int h, float xoffset, float yoffset, float xadvance);
+
+void sth_begin_draw(sth_stash* stash);
+void sth_end_draw(sth_stash* stash);
+
+void sth_draw_text(sth_stash* stash, int idx, float size, float x, float y, const char* s, float* dx);
+void sth_dim_text(sth_stash* stash, int idx, float size, const char* s, float* minx, float* miny, float* maxx, float* maxy);
+void sth_vmetrics(sth_stash* stash, int idx, float size, float* ascender, float* descender, float* lineh);
+void sth_delete(sth_stash* stash);
+void sth_color(sth_stash* stash, GLfloat r, GLfloat g, GLfloat b, GLfloat a);
 
 #ifdef __cplusplus
 }
