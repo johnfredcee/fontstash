@@ -23,11 +23,7 @@
 
 #define STH_OPENGL3
 
-#ifdef __APPLE__
-    #include <OpenGL/gl.h>
-#else
-    #include <GL/gl.h>
-#endif
+#include <glad/glad.h>
 
 #define STH_ESUCCESS 0
 // error opening file

@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "fontstash.h"
 
@@ -69,14 +69,12 @@ int main(int argc, char **argv) {
         return -1;
     }
     glfwMakeContextCurrent(window);
-    // Initialize GLEW
-    glewExperimental = GLEW_OK; // Needed for core profile
-    if (glewInit() != GLEW_OK) {
-        printf("Failed to initialize GLEW\n");
-        glfwTerminate();
-        return -1;
-    }
-
+ 
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	{
+		fprintf(stderr, "Failed to initialize GLAD\n");
+		return -1;
+	}
     sth_stash* stash = sth_create(512, 512);
 	if(!stash) fprintf(stderr, "Could not create stash.\n");
     int droidRegular, droidItalic, droidBold, droidJapanese, dejavu;
